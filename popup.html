@@ -4,88 +4,112 @@
     <meta charset="UTF-8">
     <style>
         body {
-            width: 400px; /* Increased width */
-            height: 300px;
-            padding: 10px;
+            width: 400px;
+            height: 500px;
+            padding: 16px;
             font-family: 'Segoe UI', Arial, sans-serif;
             margin: 0;
             overflow-y: auto;
             background-color: #f9f9f9;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        th, td {
-            border: 1px solid #ededed;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #0078d4;
-            color: white;
-            position: sticky;
-            top: 0;
-        }
-        .url-cell {
-            max-width: 200px; /* Adjusted for new width */
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .time-cell {
-            min-width: 70px;
-        }
-        tr:hover {
-            background-color: #f0f6fc;
-        }
         .no-data {
             text-align: center;
             padding: 20px;
             color: #666;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .clear-btn {
-            margin-top: 10px;
+            margin-top: 16px;
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             background-color: #0078d4;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            transition: background-color 0.2s;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
         .clear-btn:hover {
             background-color: #106ebe;
+            transform: translateY(-1px);
         }
         .header {
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-size: 18px;
+            margin-bottom: 16px;
             color: #0078d4;
             font-weight: 600;
+            text-align: center;
         }
-        .thumbnail-cell img {
-            max-width: 100px; /* Increased size */
-            max-height: 100px; /* Increased size */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
         }
+        .thumbnail-item {
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .thumbnail-item:hover {
+            transform: scale(1.05);
+        }
+        .thumbnail {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+        .date-header {
+            font-size: 16px;
+            margin: 16px 0;
+            color: #0078d4;
+            font-weight: 600;
+            padding: 8px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            gap: 8px;
+        }
+        .pagination-controls button {
+            padding: 8px 16px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+        .pagination-controls button:hover {
+            background-color: #106ebe;
+            transform: translateY(-1px);
+        }
+        .pagination-controls button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
     </style>
 </head>
 <body>
 <div class="header">Instagram URL History</div>
-<table>
-    <thead>
-    <tr>
-        <th>Thumbnail</th>
-        <th>URL</th>
-        <th class="time-cell">Time</th>
-    </tr>
-    </thead>
-    <tbody id="historyTableBody"></tbody>
-</table>
+<div id="paginationControls" class="pagination-controls"></div>
+<div id="historyTableBody"></div>
 <button id="clearHistory" class="clear-btn">Clear History</button>
 <script type="module" src="popup.js"></script>
 </body>
