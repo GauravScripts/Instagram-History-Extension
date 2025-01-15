@@ -1,7 +1,6 @@
 {
   "dependencies": {
-    "cheerio": "^1.0.0",
-    "date-fns": "^4.1.0"
+    "cheerio": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
