@@ -9,14 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPerPage = 9; // Items per page
     const worker = new Worker('worker.js'); // Initialize the worker
 
+    // Function to remove duplicate URLs
+    function removeDuplicateUrls(history) {
+        const seenUrls = new Set();
+        return history.filter((item) => {
+            if (seenUrls.has(item.url)) {
+                return false; // Skip duplicate
+            }
+            seenUrls.add(item.url);
+            return true; // Keep unique
+        });
+    }
+
     // Function to update the table
     function updateTable() {
         getAllItems()
             .then((history) => {
-                if (history.length === 0) {
+                // Remove duplicate URLs
+                const uniqueHistory = removeDuplicateUrls(history);
+
+                if (uniqueHistory.length === 0) {
                     updateUIWithNoData();
                 } else {
-                    worker.postMessage({ action: 'groupItemsByDate', data: history });
+                    worker.postMessage({ action: 'groupItemsByDate', data: uniqueHistory });
                 }
             })
             .catch((error) => {
