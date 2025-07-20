@@ -11,7 +11,8 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 const data = {
                     url: changeInfo.url,
                     timestamp: new Date().toLocaleString(),
-                    thumbnail: thumbnailUrl
+                    thumbnail: thumbnailUrl,
+                    favorite: false // Add favorite field with default value
                 };
 
                 addItem(data).catch(error => {

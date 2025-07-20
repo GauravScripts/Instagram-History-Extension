@@ -23,12 +23,44 @@ function openDB() {
     });
 }
 
+function migrateExistingItems() {
+    return openDB().then((db) => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = (event) => {
+                const items = event.target.result;
+                let updatedCount = 0;
+
+                items.forEach((item) => {
+                    if (item.favorite === undefined) {
+                        item.favorite = false;
+                        store.put(item);
+                        updatedCount++;
+                    }
+                });
+
+                console.log(`Migrated ${updatedCount} items with favorite field`);
+                resolve(updatedCount);
+            };
+
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    });
+}
+
 function addItem(item) {
     return openDB().then((db) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            const request = store.add(item);
+            // Add favorite field if not present
+            const itemWithFavorite = { ...item, favorite: item.favorite || false };
+            const request = store.add(itemWithFavorite);
 
             request.onsuccess = () => {
                 resolve();
@@ -59,6 +91,58 @@ function getAllItems() {
     });
 }
 
+function getFavoriteItems() {
+    return openDB().then((db) => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = (event) => {
+                const allItems = event.target.result;
+                const favoriteItems = allItems.filter(item => item.favorite);
+                resolve(favoriteItems);
+            };
+
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    });
+}
+
+function toggleFavorite(id) {
+    return openDB().then((db) => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const item = getRequest.result;
+                if (item) {
+                    item.favorite = !item.favorite;
+                    const updateRequest = store.put(item);
+                    
+                    updateRequest.onsuccess = () => {
+                        resolve(item.favorite);
+                    };
+                    
+                    updateRequest.onerror = (event) => {
+                        reject(event.target.error);
+                    };
+                } else {
+                    reject(new Error('Item not found'));
+                }
+            };
+
+            getRequest.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    });
+}
+
 function clearAllItems() {
     return openDB().then((db) => {
         return new Promise((resolve, reject) => {
@@ -77,4 +161,4 @@ function clearAllItems() {
     });
 }
 
-export { addItem, getAllItems, clearAllItems };
+export { addItem, getAllItems, getFavoriteItems, toggleFavorite, clearAllItems, migrateExistingItems };

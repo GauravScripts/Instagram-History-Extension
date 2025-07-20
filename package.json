@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack --mode=development --watch"
+  },
   "dependencies": {
     "cheerio": "^1.0.0"
   },
