@@ -236,8 +236,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/GauravScripts/instagram-history-extension/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/GauravScripts/instagram-history-extension/discussions)
-- **Email**: your-email@example.com
+- **Email**: gaurav.jindoli@gmail.com
 
 ---
 
