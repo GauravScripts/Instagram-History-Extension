@@ -14,7 +14,6 @@ A modern browser extension that automatically tracks and saves Instagram posts y
 - **📅 Date Grouping**: Organizes posts by date for easy browsing
 - **🎨 Modern UI**: Beautiful, responsive interface with smooth animations
 - **📱 Responsive Design**: Works perfectly on different screen sizes
-- **🔍 Search & Filter**: Easy navigation through your history
 - **⚡ Fast Performance**: Optimized with Web Workers for smooth operation
 
 ## 🚀 Installation
@@ -120,7 +119,6 @@ npm run clean
 - Web Workers for background processing
 - Date-based grouping of posts
 - Duplicate detection and removal
-- Efficient search and filtering
 
 ## 🎨 UI Features
 
