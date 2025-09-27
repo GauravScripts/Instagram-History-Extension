@@ -5,7 +5,8 @@
   "description": "Tracks Instagram URL changes with timestamps for Microsoft Edge",
   "permissions": [
     "tabs",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "host_permissions": [
     "*://*.instagram.com/*"
@@ -26,7 +27,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup.js"],
+      "resources": ["popup.js", "img/*"],
       "matches": ["<all_urls>"]
     }
   ]

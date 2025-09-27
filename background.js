@@ -6,13 +6,13 @@ if (typeof browser === 'undefined') {
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.url && changeInfo.url.includes('instagram.com')) {
-        extractInstagramThumbnail(changeInfo.url)
-            .then(thumbnailUrl => {
+        extractInstagramThumbnail(tabId, changeInfo.url)
+            .then(thumbnailData => {
                 const data = {
                     url: changeInfo.url,
                     timestamp: new Date().toLocaleString(),
-                    thumbnail: thumbnailUrl,
-                    favorite: false // Add favorite field with default value
+                    thumbnail: thumbnailData,
+                    favorite: false
                 };
 
                 addItem(data).catch(error => {
@@ -25,72 +25,170 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-async function extractInstagramThumbnail(url) {
+// Execute content script to extract thumbnail from the page itself to avoid CORS
+async function extractInstagramThumbnail(tabId, url) {
     try {
-        const response = await fetch(url);
-        const html = await response.text();
+        // Wait a bit for the page to load its content
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Method 1: Extract thumbnail from Open Graph meta tag using regex
-        const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-        if (ogImageMatch && ogImageMatch[1]) {
-            return ogImageMatch[1];
-        }
-
-        // Method 2: Extract thumbnail from Twitter card meta tag
-        const twitterImageMatch = html.match(/<meta\s+name="twitter:image"\s+content="([^"]+)"/i);
-        if (twitterImageMatch && twitterImageMatch[1]) {
-            return twitterImageMatch[1];
-        }
-
-        // Method 3: Look for common Instagram image patterns (e.g., in the page HTML)
-        const imageMatches = html.match(/https:\/\/[^\s"']+\.(?:jpg|jpeg|png|webp)/gi);
-        if (imageMatches && imageMatches.length > 0) {
-            return imageMatches[0];
-        }
-
-        // Method 4: Extract from Instagram's JSON data (for posts and reels)
-        const jsonMatch = html.match(/window\._sharedData\s*=\s*({.*?});<\/script>/s);
-        if (jsonMatch && jsonMatch[1]) {
-            try {
-                const sharedData = JSON.parse(jsonMatch[1]);
-
-                // Check if it's a post or reel
-                const postData = sharedData.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-                const reelData = sharedData.entry_data?.ReelPage?.[0]?.graphql?.shortcode_media;
-                const userProfilePic = sharedData.entry_data?.ReelPage?.[0]?.graphql?.user?.profile_pic_url;
-
-                // For post or reel, return the display URL or thumbnail
-                if (postData) {
-                    return postData.display_url || postData.thumbnail_src;
-                }
-                if (reelData) {
-                    return reelData.display_url || reelData.thumbnail_src;
-                }
-
-                // For stories, attempt to get the thumbnail if available
-                const storyData = sharedData.entry_data?.StoryPage?.[0]?.graphql?.story?.story_assets;
-                if (storyData && storyData.length > 0) {
-                    // Try to get the first available story asset's thumbnail or image
-                    const storyThumbnail = storyData[0]?.image_versions2?.candidates?.[0]?.url;
-                    if (storyThumbnail) {
-                        return storyThumbnail;
+        // Inject and execute content script to extract the thumbnail
+        const [result] = await browser.tabs.executeScript(tabId, {
+            code: `
+                (function() {
+                    // Try to get the image from Open Graph meta tag
+                    const ogImage = document.querySelector('meta[property="og:image"]');
+                    if (ogImage && ogImage.content) {
+                        return { thumbnailUrl: ogImage.content };
                     }
-                }
+                    
+                    // Try to get image from Twitter meta tag
+                    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+                    if (twitterImage && twitterImage.content) {
+                        return { thumbnailUrl: twitterImage.content };
+                    }
+                    
+                    // Try to find profile picture for profile pages
+                    const profileImg = document.querySelector('img[alt*="profile picture"]');
+                    if (profileImg && profileImg.src) {
+                        return { thumbnailUrl: profileImg.src };
+                    }
+                    
+                    // Look for post image
+                    const postImg = document.querySelector('article img[srcset]');
+                    if (postImg && postImg.src) {
+                        return { thumbnailUrl: postImg.src };
+                    }
+                    
+                    // Try to find any Instagram image
+                    const anyImage = document.querySelector('img[src*="instagram"]');
+                    if (anyImage && anyImage.src) {
+                        return { thumbnailUrl: anyImage.src };
+                    }
+                    
+                    return { thumbnailUrl: null };
+                })();
+            `
+        });
 
-                // Fallback: If no story thumbnail found, use the profile picture
-                if (userProfilePic) {
-                    return userProfilePic;
-                }
+        if (result && result.thumbnailUrl) {
+            // Decode any HTML entities in the URL (like &amp; to &)
+            const decodedUrl = decodeHTMLEntities(result.thumbnailUrl);
 
-            } catch (jsonError) {
-                console.error('Error parsing Instagram shared data:', jsonError);
-            }
+            // We have a thumbnail URL, compress and convert it to data URL
+            return await downloadAndCompressImage(decodedUrl);
         }
 
-        // Fallback thumbnail
-        return 'https://example.com/instagram-default-thumbnail.jpg';
+        // If no thumbnail found, use default
+        return await getDefaultImageDataUrl();
     } catch (error) {
         console.error('Error fetching Instagram thumbnail:', error);
-        return 'https://example.com/instagram-default-thumbnail.jpg';
+        return await getDefaultImageDataUrl();
     }
+}
+
+// Helper function to decode HTML entities like &amp; to &
+function decodeHTMLEntities(text) {
+    if (!text || typeof text !== 'string') return text;
+
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    const decodedText = textArea.value;
+    return decodedText;
+}
+
+// Function to get default image as data URL
+async function getDefaultImageDataUrl() {
+    const defaultImageUrl = chrome.runtime.getURL('img/default-thumbnail.svg');
+    try {
+        const response = await fetch(defaultImageUrl);
+        const blob = await response.blob();
+        return await blobToDataUrl(blob);
+    } catch (error) {
+        console.error('Error loading default image:', error);
+        // Return a minimal inline SVG data URL as absolute fallback
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0UxMzA2QyIgb3BhY2l0eT0iMC4yIi8+PHJlY3QgeD0iNTAiIHk9IjUwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0UxMzA2QyIgb3BhY2l0eT0iMC41Ii8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iODAiIHI9IjE1IiBmaWxsPSIjRTEzMDZDIi8+PHJlY3QgeD0iODAiIHk9IjExMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjUiIGZpbGw9IiNFMTMwNkMiLz48L3N2Zz4=';
+    }
+}
+
+// Download and compress image to data URL
+async function downloadAndCompressImage(imageUrl) {
+    // Check if it's already a data URL
+    if (imageUrl && imageUrl.startsWith('data:')) {
+        return imageUrl; // Already a data URL, no need to process
+    }
+
+    try {
+        // Create an image element to load the image
+        const img = new Image();
+
+        // Create a promise to handle the image loading
+        const imageLoaded = new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load image'));
+
+            // Use a direct fetch with no-cors mode to avoid CORS issues
+            fetch(imageUrl, { mode: 'no-cors', cache: 'force-cache' })
+                .then(response => response.blob())
+                .then(blob => {
+                    img.src = URL.createObjectURL(blob);
+                })
+                .catch(error => {
+                    console.error('Error fetching image:', error);
+                    reject(error);
+                });
+        });
+
+        // Wait for the image to load
+        try {
+            await imageLoaded;
+
+            // Create a canvas and compress the image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Calculate dimensions - resize to thumbnail size (150px max width or height)
+            const MAX_SIZE = 150;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height && width > MAX_SIZE) {
+                height = Math.round(height * (MAX_SIZE / width));
+                width = MAX_SIZE;
+            } else if (height > MAX_SIZE) {
+                width = Math.round(width * (MAX_SIZE / height));
+                height = MAX_SIZE;
+            }
+
+            // Set canvas dimensions
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convert to data URL with medium quality JPEG compression
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+
+            // Clean up the object URL
+            URL.revokeObjectURL(img.src);
+
+            return dataUrl;
+        } catch (error) {
+            console.error('Error processing image:', error);
+            return getDefaultImageDataUrl();
+        }
+    } catch (error) {
+        console.error('Error compressing image:', error);
+        return getDefaultImageDataUrl();
+    }
+}
+
+// Helper function to convert a Blob to a data URL
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to convert blob to data URL'));
+        reader.readAsDataURL(blob);
+    });
 }

@@ -1,4 +1,4 @@
-import { getAllItems, getFavoriteItems, toggleFavorite, clearAllItems, migrateExistingItems } from './indexedDB.js';
+import { getAllItems, getFavoriteItems, toggleFavorite, clearAllItems, migrateExistingItems, setMaxEntries } from './indexedDB.js';
 
 if (typeof browser === 'undefined') {
     var browser = chrome;
@@ -9,6 +9,115 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPerPage = 9; // Items per page
     const worker = new Worker('worker.js'); // Initialize the worker
     let currentView = 'all'; // 'all' or 'favorites'
+
+    // Settings modal elements
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeModal = document.getElementById('closeModal');
+    const maxEntriesInput = document.getElementById('maxEntries');
+    const saveSettings = document.getElementById('saveSettings');
+    const cancelSettings = document.getElementById('cancelSettings');
+
+    // Initialize settings
+    async function initializeSettings() {
+        try {
+            // Get current max entries value
+            const db = await openIndexedDB();
+            const transaction = db.transaction(['configuration'], 'readonly');
+            const store = transaction.objectStore('configuration');
+            const request = store.get('maxEntries');
+
+            request.onsuccess = () => {
+                if (request.result) {
+                    maxEntriesInput.value = request.result.value;
+                } else {
+                    maxEntriesInput.value = 1000; // Default
+                }
+            };
+
+            request.onerror = () => {
+                console.error('Error getting maxEntries value');
+                maxEntriesInput.value = 1000; // Default on error
+            };
+        } catch (error) {
+            console.error('Error initializing settings:', error);
+            maxEntriesInput.value = 1000; // Default on error
+        }
+    }
+
+    // Open IndexedDB helper function
+    function openIndexedDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('InstagramURLTrackerDB', 2);
+
+            request.onsuccess = (event) => {
+                resolve(event.target.result);
+            };
+
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    // Settings modal event listeners
+    settingsBtn.addEventListener('click', () => {
+        initializeSettings();
+        settingsModal.classList.add('show');
+    });
+
+    closeModal.addEventListener('click', () => {
+        settingsModal.classList.remove('show');
+    });
+
+    cancelSettings.addEventListener('click', () => {
+        settingsModal.classList.remove('show');
+    });
+
+    saveSettings.addEventListener('click', async () => {
+        const maxEntries = parseInt(maxEntriesInput.value, 10);
+
+        if (isNaN(maxEntries) || maxEntries < 100) {
+            alert('Please enter a valid number (minimum 100)');
+            return;
+        }
+
+        // Save the new max entries value
+        try {
+            await setMaxEntries(maxEntries);
+            settingsModal.classList.remove('show');
+
+            // Show success message
+            const message = document.createElement('div');
+            message.textContent = `Storage limit updated to ${maxEntries} entries`;
+            message.style.position = 'fixed';
+            message.style.bottom = '20px';
+            message.style.left = '50%';
+            message.style.transform = 'translateX(-50%)';
+            message.style.backgroundColor = 'rgba(102, 126, 234, 0.9)';
+            message.style.color = 'white';
+            message.style.padding = '10px 16px';
+            message.style.borderRadius = '8px';
+            message.style.zIndex = '1000';
+
+            document.body.appendChild(message);
+
+            // Remove the message after 3 seconds
+            setTimeout(() => {
+                document.body.removeChild(message);
+            }, 3000);
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            alert('Failed to save settings. Please try again.');
+        }
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            settingsModal.classList.remove('show');
+        }
+    });
 
     // Function to remove duplicate URLs
     function removeDuplicateUrls(history) {

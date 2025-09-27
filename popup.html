@@ -369,21 +369,184 @@
             color: #999;
         }
 
+        /* Settings Button and Modal Styles */
+        .actions-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .settings-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cancel-btn {
+            background: #f2f2f2;
+            border: 1px solid #ddd;
+            color: #555;
+        }
+
+        .save-btn {
+            background: #667eea;
+            border: 1px solid #5a6fd8;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .save-btn:hover {
+            background: #5a6fd8;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">Instagram History</div>
+        <div class="actions-container">
+            <div></div> <!-- Spacer for flex justification -->
+            <h1 class="header">Instagram History</h1>
+            <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+        </div>
+
+        <div class="tabs">
+            <button id="allTab" class="tab active">All History</button>
+            <button id="favoritesTab" class="tab">Favorites</button>
+        </div>
+
         <div class="content-card">
-            <div class="tabs">
-                <button class="tab active" id="allTab">All Posts</button>
-                <button class="tab" id="favoritesTab">Favorites</button>
-            </div>
-            <div id="paginationControls" class="pagination-controls"></div>
             <div id="historyTableBody"></div>
-            <button id="clearHistory" class="clear-btn">Clear All History</button>
+            <div id="paginationControls" style="margin-top: auto; display: flex; justify-content: space-between; padding: 16px;"></div>
+        </div>
+
+        <div style="margin-top: 16px; text-align: center;">
+            <button id="clearHistory" style="padding: 8px 16px; background-color: #ff4757; color: white; border: none; border-radius: 8px; cursor: pointer;">Clear History</button>
         </div>
     </div>
-    <script type="module" src="dist/popup.bundle.js"></script>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="close-modal" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="maxEntries">Maximum History Entries</label>
+                    <input type="number" id="maxEntries" min="100" max="10000" step="100">
+                    <div class="help-text">Default is 1000. Higher values may affect performance.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelSettings" class="modal-btn cancel-btn">Cancel</button>
+                <button id="saveSettings" class="modal-btn save-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dist/popup.bundle.js"></script>
 </body>
 </html>
