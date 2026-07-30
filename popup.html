@@ -25,6 +25,73 @@
             flex-direction: column;
         }
 
+        /* ── Tab mode (opened as full browser tab) ── */
+        html.tab-mode body {
+            width: 100%;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        html.tab-mode .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 40px;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        html.tab-mode .actions-container {
+            margin-bottom: 20px;
+        }
+
+        html.tab-mode .header {
+            font-size: 32px;
+        }
+
+        html.tab-mode #openTabBtn {
+            display: none;
+        }
+
+        html.tab-mode .tabs {
+            max-width: 380px;
+            margin: 0 auto 24px;
+        }
+
+        html.tab-mode .content-card {
+            flex: none;
+            min-height: 60vh;
+            padding: 20px;
+        }
+
+        html.tab-mode .grid-container {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        html.tab-mode .thumbnail-item {
+            border-radius: 14px;
+        }
+
+        html.tab-mode .date-header {
+            font-size: 20px;
+            margin-top: 28px;
+        }
+
+        html.tab-mode .pagination-controls button,
+        html.tab-mode .clear-btn {
+            max-width: 200px;
+        }
+
+        html.tab-mode #paginationControls {
+            justify-content: center;
+            gap: 16px;
+        }
+
+        html.tab-mode .clear-btn {
+            display: block;
+            margin: 20px auto 0;
+        }
+
         .header {
             text-align: center;
             margin-bottom: 24px;
@@ -142,6 +209,14 @@
         .thumbnail-item:hover {
             transform: translateY(-4px) scale(1.02);
             box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .thumbnail-link {
+            display: block;
+            text-decoration: none;
+            border-radius: 12px;
+            overflow: hidden;
+            line-height: 0;
         }
 
         .thumbnail {
@@ -396,6 +471,28 @@
             background: rgba(255,255,255,0.2);
         }
 
+        .open-tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.5);
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .open-tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.8);
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -506,7 +603,7 @@
 <body>
     <div class="container">
         <div class="actions-container">
-            <div></div> <!-- Spacer for flex justification -->
+            <button id="openTabBtn" class="open-tab-btn" title="Open in new tab">↗ Open in Tab</button>
             <h1 class="header">Instagram History</h1>
             <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
         </div>

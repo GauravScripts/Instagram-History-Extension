@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const worker = new Worker('worker.js'); // Initialize the worker
     let currentView = 'all'; // 'all' or 'favorites'
 
+    // Detect tab mode (opened as full browser tab, not popup)
+    if (window.innerWidth > 500) {
+        document.documentElement.classList.add('tab-mode');
+    }
+
+    // Open in Tab button
+    const openTabBtn = document.getElementById('openTabBtn');
+    openTabBtn.addEventListener('click', () => {
+        browser.tabs.create({ url: browser.runtime.getURL('popup.html') });
+    });
+
     // Settings modal elements
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsModal = document.getElementById('settingsModal');
@@ -198,7 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const thumbnailDiv = document.createElement('div');
                     thumbnailDiv.className = 'thumbnail-item';
                     thumbnailDiv.innerHTML = `
-                        <img src="${item.thumbnail}" alt="Thumbnail" title="${item.timestamp}" class="thumbnail">
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="thumbnail-link">
+                            <img src="${item.thumbnail}" alt="Thumbnail" title="${item.timestamp}" class="thumbnail">
+                        </a>
                         <div class="favorite-icon ${item.favorite ? '' : 'not-favorite'}" data-id="${item.id}">
                             <svg viewBox="0 0 24 24">
                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -206,14 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                     
-                    // Add click event for opening URL
-                    thumbnailDiv.addEventListener('click', (e) => {
-                        // Don't open URL if clicking on favorite icon
-                        if (!e.target.closest('.favorite-icon')) {
-                            window.open(item.url, '_blank');
-                        }
-                    });
-
                     // Add click event for favorite icon
                     const favoriteIcon = thumbnailDiv.querySelector('.favorite-icon');
                     favoriteIcon.addEventListener('click', (e) => {
